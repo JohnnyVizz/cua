@@ -126,8 +126,8 @@ report_surviving_local_install() {
         survivor="$local_marker"
     elif [[ -n "$path_cli" ]]; then
         survivor="$path_cli"
-    elif [[ "$OS" == "Darwin" && -x "/Applications/CuaDriverLocal.app/Contents/MacOS/cua-driver-local" ]]; then
-        survivor="/Applications/CuaDriverLocal.app"
+    elif [[ "$OS" == "Darwin" && -x "/Applications/SavvyCua.app/Contents/MacOS/savvy-cua" ]]; then
+        survivor="/Applications/SavvyCua.app"
     else
         return 0
     fi
@@ -577,7 +577,7 @@ def clean():
             else:
                 command = server.get("command") if isinstance(server, dict) else None
                 basename = os.path.basename(command) if isinstance(command, str) else ""
-                if basename == "cua-driver-local":
+                if basename in ("cua-driver-local", "savvy-cua"):
                     local.append(f"{scope}:{name}")
                 elif name in ("cua-driver", "cua-driver-rs", "cua-computer-use") or basename == "cua-driver":
                     kept.append(f"{scope}:{name}")

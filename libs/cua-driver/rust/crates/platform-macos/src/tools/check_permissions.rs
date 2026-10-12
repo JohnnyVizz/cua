@@ -41,7 +41,7 @@ pub async fn request_from_launchservices_host(probe_direct_capture: bool) -> Too
 }
 
 fn driver_bundle_id_for_executable(executable: &str) -> Option<&'static str> {
-    if executable.contains("/CuaDriverLocal.app/Contents/MacOS/") {
+    if executable.contains("/SavvyCua.app/Contents/MacOS/") {
         Some("com.trycua.driver.local")
     } else if executable.contains("/CuaDriver.app/Contents/MacOS/") {
         Some("com.trycua.driver")
@@ -544,13 +544,11 @@ mod tests {
             Some("com.trycua.driver")
         );
         assert_eq!(
-            driver_bundle_id_for_executable(
-                "/Applications/CuaDriverLocal.app/Contents/MacOS/cua-driver-local"
-            ),
+            driver_bundle_id_for_executable("/Applications/SavvyCua.app/Contents/MacOS/savvy-cua"),
             Some("com.trycua.driver.local")
         );
         assert_eq!(
-            driver_bundle_id_for_executable("/Users/test/.local/bin/cua-driver-local"),
+            driver_bundle_id_for_executable("/Users/test/.local/bin/savvy-cua"),
             None
         );
     }
@@ -561,7 +559,7 @@ mod tests {
             std::env::temp_dir().join(format!("cua-direct-capture-test-{}", uuid::Uuid::new_v4()));
         let release = release_evidence_store(&home);
         let local = direct_capture_evidence_store_for_identity(
-            "/Applications/CuaDriverLocal.app/Contents/MacOS/cua-driver-local",
+            "/Applications/SavvyCua.app/Contents/MacOS/savvy-cua",
             &home,
             Some("driver-daemon"),
         )

@@ -134,7 +134,7 @@ def test_local_uninstall_contract_is_explicit_on_both_platforms() -> None:
     windows = (SCRIPTS / "uninstall-local.ps1").read_text(encoding="utf-8-sig")
 
     for token in (
-        "/Applications/CuaDriverLocal.app",
+        "/Applications/SavvyCua.app",
         "com.trycua.driver.local",
         ".cua-driver-local",
         "cua-driver-local.service",
@@ -193,6 +193,6 @@ def test_unix_release_uninstaller_declares_local_detection_inputs() -> None:
     for token in (
         "CUA_DRIVER_LOCAL_HOME",
         "CUA_DRIVER_LOCAL_INSTALL_DIR",
-        "/Applications/CuaDriverLocal.app",
+        "/Applications/SavvyCua.app",
     ):
         assert token in unix

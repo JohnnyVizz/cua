@@ -30,8 +30,8 @@
 #   ${CUA_DRIVER_LOCAL_INSTALL_DIR:-$HOME/.local/bin}/cua-driver-local
 #
 # macOS layout produced:
-#   /Applications/CuaDriverLocal.app/Contents/MacOS/cua-driver-local
-#   $HOME/.local/bin/cua-driver-local -> .../CuaDriverLocal.app/Contents/MacOS/cua-driver-local
+#   /Applications/SavvyCua.app/Contents/MacOS/savvy-cua
+#   $HOME/.local/bin/savvy-cua -> .../SavvyCua.app/Contents/MacOS/savvy-cua
 #
 # The version string carries `-local-debug` / `-local-release` so it
 # never collides with a real release dir and is trivial to GC.
@@ -162,6 +162,13 @@ case "$OS" in
     *)      echo "${RED}Unsupported OS: $OS${NORMAL}"; exit 1 ;;
 esac
 
+# Visible CLI name. The fork names the macOS build savvy-cua; Linux keeps the
+# upstream name. The staged store binary stays cua-driver-local on both.
+LOCAL_CLI="cua-driver-local"
+if [ "$OS" = "Darwin" ]; then
+    LOCAL_CLI="savvy-cua"
+fi
+
 HOME_DIR="${CUA_DRIVER_LOCAL_HOME:-$HOME/.cua-driver-local}"
 BIN_DIR="${BIN_DIR_OVERRIDE:-${CUA_DRIVER_LOCAL_INSTALL_DIR:-$HOME/.local/bin}}"
 # The symlink is created after this script cds into the Cargo workspace, so a
@@ -186,7 +193,7 @@ echo "  source:  ${BOLD}$REPO_ROOT${NORMAL}"
 echo "  sha:     ${BOLD}$CUA_DRIVER_SOURCE_SHA${NORMAL}"
 echo "  config:  ${BOLD}$BUILD_CONFIG${NORMAL}"
 echo "  target:  ${BOLD}$TARGET_TRIPLE${NORMAL}"
-echo "  bin:     ${BOLD}$BIN_DIR/cua-driver-local${NORMAL}"
+echo "  bin:     ${BOLD}$BIN_DIR/$LOCAL_CLI${NORMAL}"
 echo "  current: ${BOLD}$CURRENT_LINK${NORMAL}"
 echo ""
 
@@ -377,7 +384,7 @@ echo ""
 # shellcheck source=_local-signing.sh
 . "$SCRIPT_DIR/_local-signing.sh"
 
-# --- macOS: wrap the binary in CuaDriverLocal.app for a stable TCC identity ---
+# --- macOS: wrap the binary in SavvyCua.app for a stable TCC identity ---
 #
 # TCC keys Accessibility / Screen-Recording grants on the bundle
 # identifier (com.trycua.driver.local), not the bare executable path. A loose
@@ -388,20 +395,20 @@ echo ""
 # CuaDriverBundle skeleton, install the bundle to /Applications, and point
 # the visible bin at the binary INSIDE the bundle. Linux/Windows have no
 # .app concept and keep the bare-binary symlink below.
-APP_DEST="/Applications/CuaDriverLocal.app"
+APP_DEST="/Applications/SavvyCua.app"
 if [ "$OS" = "Darwin" ]; then
     SKELETON="$REPO_ROOT/scripts/CuaDriverBundle"
     if [ ! -d "$SKELETON/Contents" ]; then
         echo "${RED}Error: bundle skeleton missing at $SKELETON${NORMAL}" >&2
         exit 1
     fi
-    APP_STAGE="$VERSIONED_DIR/CuaDriverLocal.app"
+    APP_STAGE="$VERSIONED_DIR/SavvyCua.app"
     rm -rf "$APP_STAGE"
     mkdir -p "$APP_STAGE/Contents/MacOS"
     cp -R "$SKELETON/Contents/." "$APP_STAGE/Contents/"
-    cp "$VERSIONED_DIR/cua-driver-local" "$APP_STAGE/Contents/MacOS/cua-driver-local"
+    cp "$VERSIONED_DIR/cua-driver-local" "$APP_STAGE/Contents/MacOS/$LOCAL_CLI"
     cp "$VERSIONED_DIR/cua-cursor-theme" "$APP_STAGE/Contents/MacOS/cua-cursor-theme"
-    chmod +x "$APP_STAGE/Contents/MacOS/cua-driver-local"
+    chmod +x "$APP_STAGE/Contents/MacOS/$LOCAL_CLI"
     chmod +x "$APP_STAGE/Contents/MacOS/cua-cursor-theme"
     rm -f "$APP_STAGE/Contents/MacOS/.gitkeep"
     PREVIOUS_REQUIREMENT=""
@@ -414,13 +421,13 @@ if [ "$OS" = "Darwin" ]; then
             "$APP_STAGE/Contents/Info.plist" 2>/dev/null || true
         plutil -replace CFBundleVersion -string "$VERSION_TAG" \
             "$APP_STAGE/Contents/Info.plist" 2>/dev/null || true
-        plutil -replace CFBundleExecutable -string "cua-driver-local" \
+        plutil -replace CFBundleExecutable -string "$LOCAL_CLI" \
             "$APP_STAGE/Contents/Info.plist"
         plutil -replace CFBundleIdentifier -string "com.trycua.driver.local" \
             "$APP_STAGE/Contents/Info.plist"
-        plutil -replace CFBundleName -string "Cua Driver Local" \
+        plutil -replace CFBundleName -string "SavvyCua" \
             "$APP_STAGE/Contents/Info.plist"
-        plutil -replace CFBundleDisplayName -string "Cua Driver Local" \
+        plutil -replace CFBundleDisplayName -string "SavvyCua" \
             "$APP_STAGE/Contents/Info.plist"
     fi
     # Sign the staged bundle before touching the live installation. Required on
@@ -433,13 +440,13 @@ if [ "$OS" = "Darwin" ]; then
             exit 1
         fi
         if ! codesign --verify --deep --strict "$APP_STAGE" 2>/dev/null; then
-            echo "${RED}Error: staged CuaDriverLocal.app failed signature verification; live installation was not changed.${NORMAL}" >&2
+            echo "${RED}Error: staged SavvyCua.app failed signature verification; live installation was not changed.${NORMAL}" >&2
             exit 1
         fi
         STAGED_REQUIREMENT="$(designated_requirement "$APP_STAGE")"
         STAGED_SIGNING_CLASS="$(classify_designated_requirement "$STAGED_REQUIREMENT")"
     else
-        echo "${RED}Error: codesign is required to install CuaDriverLocal.app safely.${NORMAL}" >&2
+        echo "${RED}Error: codesign is required to install SavvyCua.app safely.${NORMAL}" >&2
         exit 1
     fi
 
@@ -469,7 +476,7 @@ if [ "$OS" = "Darwin" ]; then
         if [ -d "$APP_BACKUP" ]; then
             mv "$APP_BACKUP" "$APP_DEST"
         fi
-        echo "${RED}Error: installed CuaDriverLocal.app did not preserve its verified signing identity; restored the previous bundle.${NORMAL}" >&2
+        echo "${RED}Error: installed SavvyCua.app did not preserve its verified signing identity; restored the previous bundle.${NORMAL}" >&2
         exit 1
     fi
     echo "${GREEN}installed $APP_DEST${NORMAL}"
@@ -483,7 +490,7 @@ if [ "$OS" = "Darwin" ]; then
     #
     # `ditto` drops the bundle on disk, but LaunchServices registers the new
     # com.trycua.driver.local identity ASYNCHRONOUSLY (seconds later). Until it
-    # does, `open -n -g -a CuaDriverLocal` (what `permissions grant` / MCP use to
+    # does, `open -n -g -a SavvyCua` (what `permissions grant` / MCP use to
     # launch the daemon) fails with -1728. A synchronous `lsregister -f` closes
     # that race so both the reset and the first launch resolve the bundle id.
     LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
@@ -500,15 +507,15 @@ fi
 # grants on it). On Linux/Windows point at the versioned-store binary.
 mkdir -p "$BIN_DIR"
 if [ "$OS" = "Darwin" ]; then
-    BIN_TARGET="$APP_DEST/Contents/MacOS/cua-driver-local"
+    BIN_TARGET="$APP_DEST/Contents/MacOS/$LOCAL_CLI"
 else
     BIN_TARGET="$CURRENT_LINK/cua-driver-local"
 fi
-ln -sf "$BIN_TARGET" "$BIN_DIR/cua-driver-local"
-echo "${GREEN}$BIN_DIR/cua-driver-local -> $BIN_TARGET${NORMAL}"
+ln -sf "$BIN_TARGET" "$BIN_DIR/$LOCAL_CLI"
+echo "${GREEN}$BIN_DIR/$LOCAL_CLI -> $BIN_TARGET${NORMAL}"
 echo ""
 
-INSTALLED_BIN="$BIN_DIR/cua-driver-local"
+INSTALLED_BIN="$BIN_DIR/$LOCAL_CLI"
 
 # --- Stop any pre-swap cua-driver daemons ------------------------------
 #
@@ -649,8 +656,8 @@ if [ "$INSTALL_AUTOSTART" != true ]; then
     if [ "$OS" = "Darwin" ]; then
         echo "Auto-start (recommended on macOS): re-run with --autostart to register a LaunchAgent."
         echo "  A launchd-started daemon is attributed to com.trycua.driver.local (not your terminal),"
-        echo "  so permission prompts say \"Cua Driver Local\" and grants stick — grant Accessibility +"
-        echo "  Screen Recording once and every cua-driver-local call/mcp routes through it correctly."
+        echo "  so permission prompts say \"SavvyCua\" and grants stick — grant Accessibility +"
+        echo "  Screen Recording once and every $LOCAL_CLI call/mcp routes through it correctly."
         echo "  (Without it, a prompt raised from a terminal attributes to the terminal instead.)"
     else
         echo "Auto-start (optional): re-run with --autostart to register a systemd user unit."

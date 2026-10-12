@@ -8,10 +8,15 @@
 use std::path::Path;
 
 pub const RELEASE_CLI_NAME: &str = "cua-driver";
+/// The fork names the macOS source build `savvy-cua`; other platforms keep the
+/// upstream `cua-driver-local` name.
+#[cfg(target_os = "macos")]
+pub const LOCAL_CLI_NAME: &str = "savvy-cua";
+#[cfg(not(target_os = "macos"))]
 pub const LOCAL_CLI_NAME: &str = "cua-driver-local";
 
 pub const RELEASE_APP_NAME: &str = "CuaDriver";
-pub const LOCAL_APP_NAME: &str = "CuaDriverLocal";
+pub const LOCAL_APP_NAME: &str = "SavvyCua";
 pub const RELEASE_BUNDLE_ID: &str = "com.trycua.driver";
 pub const LOCAL_BUNDLE_ID: &str = "com.trycua.driver.local";
 
@@ -24,7 +29,7 @@ pub(crate) fn path_is_local(path: &Path) -> bool {
         || file_name == format!("{LOCAL_CLI_NAME}.exe")
         || path
             .components()
-            .any(|component| component.as_os_str().to_str() == Some("CuaDriverLocal.app"))
+            .any(|component| component.as_os_str() == format!("{LOCAL_APP_NAME}.app").as_str())
 }
 
 /// Whether this process is the explicitly-installed source-build product.
@@ -108,7 +113,7 @@ pub fn is_executable_inside_cuadriver_app() -> bool {
         .is_some_and(|path| {
             path.to_str().is_some_and(|path| {
                 path.contains("/CuaDriver.app/Contents/MacOS/")
-                    || path.contains("/CuaDriverLocal.app/Contents/MacOS/")
+                    || path.contains(&format!("/{LOCAL_APP_NAME}.app/Contents/MacOS/"))
             })
         })
 }
@@ -133,11 +138,11 @@ mod tests {
     #[test]
     fn local_identity_requires_the_explicit_local_product_name() {
         assert!(path_is_local(Path::new(
-            "/Applications/CuaDriverLocal.app/Contents/MacOS/cua-driver-local"
+            "/Applications/SavvyCua.app/Contents/MacOS/savvy-cua"
         )));
-        assert!(path_is_local(Path::new(
-            "/dev/.cua-driver-local/cua-driver-local.exe"
-        )));
+        assert!(path_is_local(Path::new(&format!(
+            "/dev/.cua-driver-local/{LOCAL_CLI_NAME}.exe"
+        ))));
         assert!(!path_is_local(Path::new(
             "/Applications/CuaDriver.app/Contents/MacOS/cua-driver"
         )));

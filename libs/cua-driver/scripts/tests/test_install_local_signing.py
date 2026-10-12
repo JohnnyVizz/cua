@@ -67,7 +67,7 @@ def test_ad_hoc_fallback_is_prominent_and_reports_cdhash() -> None:
     )
 
     assert result.returncode == 0, result.stderr
-    assert "WARNING: CuaDriverLocal.app was signed ad-hoc" in result.stderr
+    assert "WARNING: SavvyCua.app was signed ad-hoc" in result.stderr
     assert "WILL become invalid on the next rebuild" in result.stderr
     assert "designated requirement uses cdhash" in result.stderr
 
@@ -112,7 +112,7 @@ def test_changed_ad_hoc_requirement_resets_only_local_driver_services() -> None:
         "reset:ScreenCapture:com.trycua.driver.local\n"
     )
     assert "cleared stale Accessibility and Screen Recording rows" in result.stderr
-    assert "cua-driver-local permissions grant" in result.stderr
+    assert "savvy-cua permissions grant" in result.stderr
 
 
 def test_unchanged_or_certificate_requirements_preserve_tcc_rows() -> None:
@@ -165,9 +165,10 @@ def test_local_installer_uses_a_separate_macos_identity() -> None:
     """Local rebuilds never replace or reset the release app identity (#2230)."""
     script = (SCRIPTS_DIR / "_install-local-rust.sh").read_text()
 
-    assert 'APP_DEST="/Applications/CuaDriverLocal.app"' in script
+    assert 'APP_DEST="/Applications/SavvyCua.app"' in script
     assert 'CFBundleIdentifier -string "com.trycua.driver.local"' in script
-    assert 'CFBundleExecutable -string "cua-driver-local"' in script
+    assert 'LOCAL_CLI="savvy-cua"' in script
+    assert 'CFBundleExecutable -string "$LOCAL_CLI"' in script
     assert "tccutil reset" not in script
 
 
@@ -176,7 +177,7 @@ def test_unix_local_installer_uses_separate_paths_and_autostart() -> None:
     script = (SCRIPTS_DIR / "_install-local-rust.sh").read_text()
 
     assert 'HOME_DIR="${CUA_DRIVER_LOCAL_HOME:-$HOME/.cua-driver-local}"' in script
-    assert "BIN_DIR/cua-driver-local" in script
+    assert "BIN_DIR/$LOCAL_CLI" in script
     assert "com.trycua.cua-driver-local.plist" in script
     assert "cua-driver-local.service" in script
     assert "stop_cua_driver_daemons" not in script
@@ -216,6 +217,6 @@ def test_windows_local_installer_uses_separate_paths_and_autostart() -> None:
 def test_release_installers_do_not_target_local_product_artifacts() -> None:
     for name in ("_install-rust.sh", "install.ps1"):
         script = (SCRIPTS_DIR / name).read_text()
-        assert "CuaDriverLocal" not in script
+        assert "SavvyCua" not in script
         assert ".cua-driver-local" not in script
         assert "cua-driver-local-serve" not in script

@@ -3244,8 +3244,9 @@ pub fn run_update_cmd(apply: bool, json: bool) {
     }
     if apply && crate::bundle::is_local_installation() {
         eprintln!(
-            "cua-driver-local is managed by scripts/install-local.sh (or install-local.ps1); \
-             refusing to run the release installer from the local product."
+            "{} is managed by scripts/install-local.sh (or install-local.ps1); \
+             refusing to run the release installer from the local product.",
+            crate::bundle::cli_name()
         );
         process::exit(2);
     }

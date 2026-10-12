@@ -24,8 +24,13 @@ done
 OS="$(uname -s 2>/dev/null || echo unknown)"
 HOME_DIR="${CUA_DRIVER_LOCAL_HOME:-$HOME/.cua-driver-local}"
 BIN_DIR="${CUA_DRIVER_LOCAL_INSTALL_DIR:-$HOME/.local/bin}"
-CLI_LINK="$BIN_DIR/cua-driver-local"
-APP_BUNDLE="/Applications/CuaDriverLocal.app"
+# The fork names the macOS CLI savvy-cua; Linux keeps the upstream name.
+LOCAL_CLI="cua-driver-local"
+if [[ "$OS" == "Darwin" ]]; then
+    LOCAL_CLI="savvy-cua"
+fi
+CLI_LINK="$BIN_DIR/$LOCAL_CLI"
+APP_BUNDLE="/Applications/SavvyCua.app"
 if [[ "$OS" == "Darwin" ]]; then
     CACHE_DIR="$HOME/Library/Caches/cua-driver-local"
 else
@@ -149,7 +154,7 @@ done
 # Scrub Claude registrations only when their command/args point at local paths.
 CLAUDE_JSON="$HOME/.claude.json"
 if [[ -f "$CLAUDE_JSON" ]] && command -v python3 >/dev/null 2>&1; then
-    CLAUDE_JSON="$CLAUDE_JSON" LOCAL_HOME="$HOME_DIR" LOCAL_APP="$APP_BUNDLE" python3 <<'PY'
+    CLAUDE_JSON="$CLAUDE_JSON" LOCAL_HOME="$HOME_DIR" LOCAL_APP="$APP_BUNDLE" LOCAL_CLI_LINK="$CLI_LINK" python3 <<'PY'
 import json, os, shutil, tempfile, time
 
 path = os.environ["CLAUDE_JSON"]
@@ -159,7 +164,7 @@ try:
 except (OSError, ValueError):
     raise SystemExit(0)
 
-anchors = ("cua-driver-local", os.environ["LOCAL_HOME"], os.environ["LOCAL_APP"])
+anchors = ("cua-driver-local", os.environ["LOCAL_CLI_LINK"], os.environ["LOCAL_HOME"], os.environ["LOCAL_APP"])
 removed = []
 
 def is_local(server):
